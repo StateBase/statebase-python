@@ -1,93 +1,97 @@
-# StateBase SDKs
+# StateBase Python SDK
 
-This repository contains the official SDKs for StateBase API.
+The official Python client for [StateBase](https://statebase.org) - The Reliability Layer for Production AI Agents.
 
-## 📦 Python SDK
+Manage persistent memory, deterministic state, and real-time observability for your AI agents with a simple, unified API.
 
-### Installation
+[![PyPI version](https://badge.fury.io/py/statebase.svg)](https://badge.fury.io/py/statebase)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 📦 Installation
+
 ```bash
-cd state-base-api-client
-pip install -e .
+pip install statebase
 ```
 
+## 🚀 Quick Start
+
+### API Key
+You need a StateBase API Key. You can get one by signing up at [statebase.org](https://statebase.org) or hosting your own instance.
+
 ### Usage
+
 ```python
-from state_base_api_client import Client
-from state_base_api_client.api.sessions import create_session_v1_sessions_post
-from state_base_api_client.models import SessionCreateRequest
+from statebase import StateBase
 
-# Initialize client
-client = Client(base_url="https://api.statebase.org")
-client = client.with_headers({"X-API-Key": "your-api-key"})
+# Initialize the client
+client = StateBase(api_key="sb_live_...")
 
-# Create a session
-request = SessionCreateRequest(
-    agent_id="my-agent",
-    initial_state={"user_name": "Alice"}
+# 1. Create a Session with strict state
+session = client.create_session(
+    agent_id="support-agent-01",
+    initial_state={
+        "status": "active",
+        "context": {"user": "alice"}
+    }
 )
-session = create_session_v1_sessions_post.sync(client=client, body=request)
+print(f"Session ID: {session.id}")
 
-print(f"Created session: {session.id}")
+# 2. Add Persistent Memory (Vector-embedded automatically)
+client.create_memory(
+    session_id=session.id,
+    content="User prefers email notifications",
+    type="preference"
+)
+
+# 3. Log a Turn (Trace input/output)
+client.create_turn(
+    session_id=session.id,
+    input="What are my preferences?",
+    output="You prefer email notifications.",
+    metadata={"model": "gpt-4"}
+)
+
+# 4. Update State safely
+client.update_state(
+    session_id=session.id,
+    updates={"last_action": "notification_check"},
+    reasoning="User asked for preferences"
+)
 ```
 
-**Features:**
-- ✅ Auto-generated from OpenAPI spec (always in sync)
-- ✅ Full type hints with Pydantic
-- ✅ Sync and async support
-- ✅ Complete API coverage
+## ⚡ Async Support
 
-## 📦 TypeScript SDK
+Build high-performance agents with fully async methods:
 
-### Installation
-```bash
-cd ../statebase-ts-sdk
-npm install
-npm run build
+```python
+import asyncio
+from statebase import AsyncStateBase
+
+async def main():
+    async with AsyncStateBase(api_key="sb_live_...") as client:
+        # Search memories semantically
+        memories = await client.search_memories(
+            query="notification preference",
+            session_id="session_123"
+        )
+        print(memories)
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-### Usage
-```typescript
-import StateBase from './src/index';
+## 🛠 Features
 
-// Initialize client
-const client = new StateBase('your-api-key', 'http://api.statebase.org');
-
-// Create a session
-const session = await client.createSession({
-  agent_id: 'my-agent',
-  initial_state: { user_name: 'Alice' }
-});
-
-console.log(`Created session: ${session.id}`);
-```
-
-**Features:**
-- ✅ Auto-generated TypeScript types from OpenAPI
-- ✅ Clean, intuitive API
-- ✅ Full type safety
-- ✅ Promise-based async
-
-## 🔄 Regenerating SDKs
-
-When the API changes, regenerate the SDKs:
-
-### TypeScript Types
-```bash
-cd statebase-ts-sdk
-npx openapi-typescript ../statebase/openapi.json -o src/schema.ts
-```
-
-### Python Client
-```bash
-cd statebase-py-sdk
-python -m openapi_python_client generate --path ../statebase/openapi.json
-```
+*   **Persistent Memory**: Long-term vector storage for agent knowledge.
+*   **State Management**: Track and rollback agent state changes deterministically.
+*   **Observability**: Trace every turn, input, and output.
+*   **Type Safety**: Full Pydantic models for request/response validation.
+*   **Async/Sync**: First-class support for both synchronous and asynchronous patterns.
 
 ## 📚 Documentation
 
-- API Docs: http://api.statebase.org/docs
-- Full Documentation: https://docs.statebase.org
+For full API documentation, visit [docs.statebase.org](https://docs.statebase.org).
 
-## License
+## 📄 License
 
-MIT
+MIT License. See [LICENSE](LICENSE) for details.
