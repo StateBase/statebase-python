@@ -122,13 +122,13 @@ class AsyncStateBase:
     async def update_state(
         self,
         session_id: str,
-        updates: Dict[str, Any],
+        state: Dict[str, Any],
         reasoning: Optional[str] = None
     ) -> Dict[str, Any]:
         """Partially update session state"""
         response = await self.client.patch(
             f"{self.base_url}/v1/sessions/{session_id}/state",
-            json={"updates": updates, "reasoning": reasoning}
+            json={"state": state, "reasoning": reasoning}
         )
         response.raise_for_status()
         return response.json()
@@ -151,7 +151,7 @@ class AsyncStateBase:
     async def create_memory(
         self,
         content: str,
-        memory_type: str = "fact",
+        type: str = "fact",
         session_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None
@@ -161,7 +161,7 @@ class AsyncStateBase:
             f"{self.base_url}/v1/memories",
             json={
                 "content": content,
-                "memory_type": memory_type,
+                "type": type,
                 "session_id": session_id,
                 "tags": tags,
                 "metadata": metadata

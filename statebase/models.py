@@ -51,14 +51,14 @@ class TurnResponse(BaseModel):
     output: TurnOutput
     metadata: Optional[Dict[str, Any]] = None
     reasoning: Optional[str] = None
-    state_before: Dict[str, Any]
-    state_after: Dict[str, Any]
+    state_before: Optional[Dict[str, Any]] = None
+    state_after: Optional[Dict[str, Any]] = None
     created_at: str
 
 
 class MemoryCreateRequest(BaseModel):
     content: str
-    memory_type: str = "fact"
+    type: str = "fact"
     session_id: Optional[str] = None
     tags: Optional[List[str]] = None
     metadata: Optional[Dict[str, Any]] = None
@@ -77,7 +77,7 @@ class MemoryResponse(BaseModel):
 
 
 class StateUpdateRequest(BaseModel):
-    updates: Dict[str, Any]
+    state: Dict[str, Any]
     reasoning: Optional[str] = None
 
 

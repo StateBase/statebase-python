@@ -126,8 +126,6 @@ class MemoryClient:
     def add(
         self,
         content: str,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
         type: str = "fact",
         session_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
@@ -140,8 +138,6 @@ class MemoryClient:
                 "content": content,
                 "type": type,
                 "session_id": session_id,
-                "user_id": user_id,
-                "agent_id": agent_id,
                 "tags": tags,
                 "metadata": metadata
             }
