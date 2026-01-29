@@ -78,6 +78,15 @@ class AsyncStateBase:
         """Delete a session"""
         response = await self.client.delete(f"{self.base_url}/v1/sessions/{session_id}")
         response.raise_for_status()
+
+    async def get_context(self, session_id: str, query: str) -> Dict[str, Any]:
+        """Get processed context for LLM generation"""
+        response = await self.client.post(
+            f"{self.base_url}/v1/sessions/{session_id}/context",
+            json={"query": query}
+        )
+        response.raise_for_status()
+        return response.json()
     
     # Turns
     async def create_turn(

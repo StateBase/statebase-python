@@ -45,6 +45,27 @@ class SessionsClient:
         response = self.client.get(f"{self.base_url}/v1/sessions/{session_id}")
         response.raise_for_status()
         return SessionResponse(**response.json())
+
+    def list(
+        self,
+        agent_id: Optional[str] = None,
+        limit: int = 20,
+        starting_after: Optional[str] = None,
+        created_after: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """List sessions with filtering"""
+        params = {"limit": limit}
+        if agent_id:
+            params["agent_id"] = agent_id
+        if starting_after:
+            params["starting_after"] = starting_after
+        if created_after:
+            params["created_after"] = created_after
+            
+        response = self.client.get(f"{self.base_url}/v1/sessions", params=params)
+        response.raise_for_status()
+        return response.json()
+    
     
     def get_context(self, session_id: str, query: str) -> Dict[str, Any]:
         """Get processed context for LLM generation"""
