@@ -12,71 +12,60 @@ from .models import (
 )
 
 
-class AsyncStateBase:
-    """Asynchronous client for StateBase API"""
-    
-    def __init__(
-        self,
-        api_key: str,
-        base_url: str = "https://api.statebase.org",
-        timeout: float = 30.0
-    ):
-        """
-        Initialize async StateBase client.
-        
-        Args:
-            api_key: Your StateBase API key
-            base_url: Base URL for the API
-            timeout: Request timeout in seconds
-        """
-        self.base_url = base_url.rstrip('/')
-        self.timeout = timeout
-        self.client = httpx.AsyncClient(
-            headers={
-                "X-API-Key": api_key,
-                "Content-Type": "application/json"
-            },
-            timeout=timeout
-        )
-    
-    async def __aenter__(self):
-        return self
-    
-    async def __aexit__(self, *args):
-        await self.close()
-    
-    async def close(self):
-        """Close the HTTP client"""
-        await self.client.aclose()
-    
-    # Sessions
-    async def create_session(
+class AsyncSessionsClient:
+    def __init__(self, client: httpx.AsyncClient, base_url: str):
+        self.client = client
+        self.base_url = base_url
+
+    async def create(
         self,
         agent_id: str,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         initial_state: Optional[Dict[str, Any]] = None,
         ttl_seconds: Optional[int] = None
     ) -> SessionResponse:
         """Create a new session"""
-        response = await self.client.post(
-            f"{self.base_url}/v1/sessions",
-            json={
-                "agent_id": agent_id,
-                "metadata": metadata,
-                "initial_state": initial_state,
-                "ttl_seconds": ttl_seconds
-            }
-        )
+        payload = {
+            "agent_id": agent_id,
+            "metadata": metadata,
+            "initial_state": initial_state,
+            "ttl_seconds": ttl_seconds,
+        }
+        if user_id:
+            payload["user_id"] = user_id
+
+        response = await self.client.post(f"{self.base_url}/v1/sessions", json=payload)
         response.raise_for_status()
         return SessionResponse(**response.json())
-    
-    async def get_session(self, session_id: str) -> SessionResponse:
+
+    async def get(self, session_id: str) -> SessionResponse:
         """Get session by ID"""
         response = await self.client.get(f"{self.base_url}/v1/sessions/{session_id}")
         response.raise_for_status()
         return SessionResponse(**response.json())
-    
-    async def delete_session(self, session_id: str) -> None:
+
+    async def list(
+        self,
+        agent_id: Optional[str] = None,
+        limit: int = 20,
+        starting_after: Optional[str] = None,
+        created_after: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """List sessions with filtering"""
+        params = {"limit": limit}
+        if agent_id:
+            params["agent_id"] = agent_id
+        if starting_after:
+            params["starting_after"] = starting_after
+        if created_after:
+            params["created_after"] = created_after
+            
+        response = await self.client.get(f"{self.base_url}/v1/sessions", params=params)
+        response.raise_for_status()
+        return response.json()
+
+    async def delete(self, session_id: str) -> None:
         """Delete a session"""
         response = await self.client.delete(f"{self.base_url}/v1/sessions/{session_id}")
         response.raise_for_status()
@@ -100,68 +89,70 @@ class AsyncStateBase:
         )
         response.raise_for_status()
         return response.json()
-    
-    # Turns
-    async def create_turn(
+
+    async def add_turn(
         self,
         session_id: str,
-        input_content: str,
-        output_content: str,
-        input_type: str = "text",
-        output_type: str = "text",
+        input: Any,
+        output: Any,
         metadata: Optional[Dict[str, Any]] = None,
         reasoning: Optional[str] = None
     ) -> TurnResponse:
-        """Create a new turn in a session"""
+        """Log a turn to a session"""
+        # Handle simple string usage
+        if isinstance(input, str):
+            input = {"type": "text", "content": input}
+        if isinstance(output, str):
+            output = {"type": "text", "content": output}
+
         response = await self.client.post(
             f"{self.base_url}/v1/sessions/{session_id}/turns",
             json={
-                "input": {"type": input_type, "content": input_content},
-                "output": {"type": output_type, "content": output_content},
+                "input": input,
+                "output": output,
                 "metadata": metadata,
                 "reasoning": reasoning
             }
         )
         response.raise_for_status()
         return TurnResponse(**response.json())
-    
-    # State
-    async def get_state(self, session_id: str) -> Dict[str, Any]:
+
+    async def list_turns(self, session_id: str, limit: int = 20, starting_after: Optional[str] = None) -> List[TurnResponse]:
+        """List turns in a session"""
+        params = {"limit": limit}
+        if starting_after:
+            params["starting_after"] = starting_after
+        response = await self.client.get(f"{self.base_url}/v1/sessions/{session_id}/turns", params=params)
+        response.raise_for_status()
+        return [TurnResponse(**t) for t in response.json().get("data", [])]
+
+    async def get_state(self, session_id: str) -> StateGetResponse:
         """Get current state of a session"""
         response = await self.client.get(f"{self.base_url}/v1/sessions/{session_id}/state")
         response.raise_for_status()
-        return response.json()
-    
+        return StateGetResponse(**response.json())
+
     async def update_state(
         self,
         session_id: str,
         state: Dict[str, Any],
         reasoning: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> StateGetResponse:
         """Partially update session state"""
         response = await self.client.patch(
             f"{self.base_url}/v1/sessions/{session_id}/state",
             json={"state": state, "reasoning": reasoning}
         )
         response.raise_for_status()
-        return response.json()
-    
-    async def replace_state(
-        self,
-        session_id: str,
-        state: Dict[str, Any],
-        reasoning: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Replace entire session state"""
-        response = await self.client.put(
-            f"{self.base_url}/v1/sessions/{session_id}/state",
-            json={"state": state, "reasoning": reasoning}
-        )
-        response.raise_for_status()
-        return response.json()
-    
-    # Memories
-    async def create_memory(
+        return StateGetResponse(**response.json())
+
+
+class AsyncMemoryClient:
+    def __init__(self, client: httpx.AsyncClient, base_url: str):
+        self.client = client
+        self.base_url = base_url
+
+    async def add(
         self,
         content: str,
         type: str = "fact",
@@ -182,13 +173,13 @@ class AsyncStateBase:
         )
         response.raise_for_status()
         return MemoryResponse(**response.json())
-    
-    async def search_memories(
+
+    async def search(
         self,
         query: str,
         session_id: Optional[str] = None,
         types: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[List[str]] = None,
         limit: int = 10,
         threshold: float = 0.7
     ) -> List[MemorySearchResult]:
@@ -203,22 +194,46 @@ class AsyncStateBase:
         if types:
             params["types"] = types
         if tags:
-            params["tags"] = tags
+            params["tags"] = ",".join(tags) if isinstance(tags, list) else tags
         
         response = await self.client.get(f"{self.base_url}/v1/memories", params=params)
         response.raise_for_status()
         return [MemorySearchResult(**m) for m in response.json().get("data", [])]
 
-    async def list_turns(self, session_id: str, limit: int = 20, starting_after: Optional[str] = None) -> List[TurnResponse]:
-        """List turns in a session"""
-        params = {"limit": limit}
-        if starting_after:
-            params["starting_after"] = starting_after
-        response = await self.client.get(f"{self.base_url}/v1/sessions/{session_id}/turns", params=params)
-        response.raise_for_status()
-        return [TurnResponse(**t) for t in response.json().get("data", [])]
+
+class AsyncStateBase:
+    """Asynchronous client for StateBase API"""
     
-    # Health
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str = "https://api.statebase.org",
+        timeout: float = 30.0
+    ):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+        self.client = httpx.AsyncClient(
+            headers={
+                "X-API-Key": api_key,
+                "Content-Type": "application/json"
+            },
+            timeout=timeout
+        )
+
+        # Namespaced Clients
+        self.sessions = AsyncSessionsClient(self.client, self.base_url)
+        self.memory = AsyncMemoryClient(self.client, self.base_url)
+    
+    async def __aenter__(self):
+        return self
+    
+    async def __aexit__(self, *args):
+        await self.close()
+    
+    async def close(self):
+        """Close the HTTP client"""
+        await self.client.aclose()
+    
     async def health(self) -> Dict[str, Any]:
         """Check API health"""
         response = await self.client.get(f"{self.base_url}/health")

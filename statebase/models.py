@@ -102,7 +102,7 @@ class StateGetResponse(BaseModel):
     session_id: str
     version: int
     state: Dict[str, Any]
-    created_at: str
+    created_at: Optional[str] = None
     updated_at: str
 
 
