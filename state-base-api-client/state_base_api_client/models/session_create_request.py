@@ -22,12 +22,14 @@ class SessionCreateRequest:
 
     Attributes:
         agent_id (str): Unique agent identifier
+        user_id (None | str | Unset): Dashboard user identifier for ownership
         metadata (None | SessionCreateRequestMetadataType0 | Unset): Arbitrary metadata for the session
         initial_state (None | SessionCreateRequestInitialStateType0 | Unset): Initial state values
         ttl_seconds (int | None | Unset): Session TTL in seconds
     """
 
     agent_id: str
+    user_id: None | str | Unset = UNSET
     metadata: None | SessionCreateRequestMetadataType0 | Unset = UNSET
     initial_state: None | SessionCreateRequestInitialStateType0 | Unset = UNSET
     ttl_seconds: int | None | Unset = UNSET
@@ -38,6 +40,12 @@ class SessionCreateRequest:
         from ..models.session_create_request_metadata_type_0 import SessionCreateRequestMetadataType0
 
         agent_id = self.agent_id
+
+        user_id: None | str | Unset
+        if isinstance(self.user_id, Unset):
+            user_id = UNSET
+        else:
+            user_id = self.user_id
 
         metadata: dict[str, Any] | None | Unset
         if isinstance(self.metadata, Unset):
@@ -68,6 +76,8 @@ class SessionCreateRequest:
                 "agent_id": agent_id,
             }
         )
+        if user_id is not UNSET:
+            field_dict["user_id"] = user_id
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
         if initial_state is not UNSET:
@@ -84,6 +94,15 @@ class SessionCreateRequest:
 
         d = dict(src_dict)
         agent_id = d.pop("agent_id")
+
+        def _parse_user_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        user_id = _parse_user_id(d.pop("user_id", UNSET))
 
         def _parse_metadata(data: object) -> None | SessionCreateRequestMetadataType0 | Unset:
             if data is None:
@@ -130,6 +149,7 @@ class SessionCreateRequest:
 
         session_create_request = cls(
             agent_id=agent_id,
+            user_id=user_id,
             metadata=metadata,
             initial_state=initial_state,
             ttl_seconds=ttl_seconds,

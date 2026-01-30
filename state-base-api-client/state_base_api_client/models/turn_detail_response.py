@@ -10,6 +10,8 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.turn_detail_response_metadata_type_0 import TurnDetailResponseMetadataType0
+    from ..models.turn_detail_response_state_after_type_0 import TurnDetailResponseStateAfterType0
+    from ..models.turn_detail_response_state_before_type_0 import TurnDetailResponseStateBeforeType0
     from ..models.turn_input import TurnInput
     from ..models.turn_output import TurnOutput
 
@@ -31,6 +33,8 @@ class TurnDetailResponse:
         metadata (None | TurnDetailResponseMetadataType0):
         reasoning (None | str):
         object_ (str | Unset):  Default: 'turn'.
+        state_before (None | TurnDetailResponseStateBeforeType0 | Unset):
+        state_after (None | TurnDetailResponseStateAfterType0 | Unset):
     """
 
     id: str
@@ -42,10 +46,14 @@ class TurnDetailResponse:
     metadata: None | TurnDetailResponseMetadataType0
     reasoning: None | str
     object_: str | Unset = "turn"
+    state_before: None | TurnDetailResponseStateBeforeType0 | Unset = UNSET
+    state_after: None | TurnDetailResponseStateAfterType0 | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.turn_detail_response_metadata_type_0 import TurnDetailResponseMetadataType0
+        from ..models.turn_detail_response_state_after_type_0 import TurnDetailResponseStateAfterType0
+        from ..models.turn_detail_response_state_before_type_0 import TurnDetailResponseStateBeforeType0
 
         id = self.id
 
@@ -70,6 +78,22 @@ class TurnDetailResponse:
 
         object_ = self.object_
 
+        state_before: dict[str, Any] | None | Unset
+        if isinstance(self.state_before, Unset):
+            state_before = UNSET
+        elif isinstance(self.state_before, TurnDetailResponseStateBeforeType0):
+            state_before = self.state_before.to_dict()
+        else:
+            state_before = self.state_before
+
+        state_after: dict[str, Any] | None | Unset
+        if isinstance(self.state_after, Unset):
+            state_after = UNSET
+        elif isinstance(self.state_after, TurnDetailResponseStateAfterType0):
+            state_after = self.state_after.to_dict()
+        else:
+            state_after = self.state_after
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -86,12 +110,18 @@ class TurnDetailResponse:
         )
         if object_ is not UNSET:
             field_dict["object"] = object_
+        if state_before is not UNSET:
+            field_dict["state_before"] = state_before
+        if state_after is not UNSET:
+            field_dict["state_after"] = state_after
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.turn_detail_response_metadata_type_0 import TurnDetailResponseMetadataType0
+        from ..models.turn_detail_response_state_after_type_0 import TurnDetailResponseStateAfterType0
+        from ..models.turn_detail_response_state_before_type_0 import TurnDetailResponseStateBeforeType0
         from ..models.turn_input import TurnInput
         from ..models.turn_output import TurnOutput
 
@@ -132,6 +162,40 @@ class TurnDetailResponse:
 
         object_ = d.pop("object", UNSET)
 
+        def _parse_state_before(data: object) -> None | TurnDetailResponseStateBeforeType0 | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                state_before_type_0 = TurnDetailResponseStateBeforeType0.from_dict(data)
+
+                return state_before_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | TurnDetailResponseStateBeforeType0 | Unset, data)
+
+        state_before = _parse_state_before(d.pop("state_before", UNSET))
+
+        def _parse_state_after(data: object) -> None | TurnDetailResponseStateAfterType0 | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                state_after_type_0 = TurnDetailResponseStateAfterType0.from_dict(data)
+
+                return state_after_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | TurnDetailResponseStateAfterType0 | Unset, data)
+
+        state_after = _parse_state_after(d.pop("state_after", UNSET))
+
         turn_detail_response = cls(
             id=id,
             session_id=session_id,
@@ -142,6 +206,8 @@ class TurnDetailResponse:
             metadata=metadata,
             reasoning=reasoning,
             object_=object_,
+            state_before=state_before,
+            state_after=state_after,
         )
 
         turn_detail_response.additional_properties = d

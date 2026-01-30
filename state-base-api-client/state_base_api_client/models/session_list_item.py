@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,6 +23,7 @@ class SessionListItem:
         memory_count (int):
         turn_count (int):
         object_ (str | Unset):  Default: 'session'.
+        user_id (None | str | Unset):
     """
 
     id: str
@@ -32,6 +33,7 @@ class SessionListItem:
     memory_count: int
     turn_count: int
     object_: str | Unset = "session"
+    user_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,6 +51,12 @@ class SessionListItem:
 
         object_ = self.object_
 
+        user_id: None | str | Unset
+        if isinstance(self.user_id, Unset):
+            user_id = UNSET
+        else:
+            user_id = self.user_id
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -63,6 +71,8 @@ class SessionListItem:
         )
         if object_ is not UNSET:
             field_dict["object"] = object_
+        if user_id is not UNSET:
+            field_dict["user_id"] = user_id
 
         return field_dict
 
@@ -83,6 +93,15 @@ class SessionListItem:
 
         object_ = d.pop("object", UNSET)
 
+        def _parse_user_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        user_id = _parse_user_id(d.pop("user_id", UNSET))
+
         session_list_item = cls(
             id=id,
             agent_id=agent_id,
@@ -91,6 +110,7 @@ class SessionListItem:
             memory_count=memory_count,
             turn_count=turn_count,
             object_=object_,
+            user_id=user_id,
         )
 
         session_list_item.additional_properties = d

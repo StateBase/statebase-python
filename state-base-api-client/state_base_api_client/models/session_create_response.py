@@ -23,6 +23,7 @@ class SessionCreateResponse:
     Attributes:
         id (str):
         agent_id (str):
+        user_id (None | str):
         created_at (str):
         updated_at (str):
         metadata (None | SessionCreateResponseMetadataType0):
@@ -35,6 +36,7 @@ class SessionCreateResponse:
 
     id: str
     agent_id: str
+    user_id: None | str
     created_at: str
     updated_at: str
     metadata: None | SessionCreateResponseMetadataType0
@@ -51,6 +53,9 @@ class SessionCreateResponse:
         id = self.id
 
         agent_id = self.agent_id
+
+        user_id: None | str
+        user_id = self.user_id
 
         created_at = self.created_at
 
@@ -79,6 +84,7 @@ class SessionCreateResponse:
             {
                 "id": id,
                 "agent_id": agent_id,
+                "user_id": user_id,
                 "created_at": created_at,
                 "updated_at": updated_at,
                 "metadata": metadata,
@@ -102,6 +108,13 @@ class SessionCreateResponse:
         id = d.pop("id")
 
         agent_id = d.pop("agent_id")
+
+        def _parse_user_id(data: object) -> None | str:
+            if data is None:
+                return data
+            return cast(None | str, data)
+
+        user_id = _parse_user_id(d.pop("user_id"))
 
         created_at = d.pop("created_at")
 
@@ -140,6 +153,7 @@ class SessionCreateResponse:
         session_create_response = cls(
             id=id,
             agent_id=agent_id,
+            user_id=user_id,
             created_at=created_at,
             updated_at=updated_at,
             metadata=metadata,

@@ -7,6 +7,8 @@ from .models import (
     SessionResponse,
     TurnResponse,
     MemoryResponse,
+    MemorySearchResult,
+    StateGetResponse,
 )
 
 
@@ -79,11 +81,22 @@ class AsyncStateBase:
         response = await self.client.delete(f"{self.base_url}/v1/sessions/{session_id}")
         response.raise_for_status()
 
-    async def get_context(self, session_id: str, query: str) -> Dict[str, Any]:
-        """Get processed context for LLM generation"""
+    async def get_context(
+        self,
+        session_id: str,
+        query: Optional[str] = None,
+        memory_limit: int = 5,
+        turn_limit: int = 5
+    ) -> Dict[str, Any]:
+        """Get consolidated context (state, relevant memories, recent turns)"""
+        payload = {
+            "query": query,
+            "memory_limit": memory_limit,
+            "turn_limit": turn_limit
+        }
         response = await self.client.post(
             f"{self.base_url}/v1/sessions/{session_id}/context",
-            json={"query": query}
+            json=payload
         )
         response.raise_for_status()
         return response.json()
@@ -174,19 +187,36 @@ class AsyncStateBase:
         self,
         query: str,
         session_id: Optional[str] = None,
-        memory_type: Optional[str] = None,
-        limit: int = 10
-    ) -> List[MemoryResponse]:
-        """Search memories by semantic similarity"""
-        params = {"query": query, "limit": limit}
+        types: Optional[str] = None,
+        tags: Optional[str] = None,
+        limit: int = 10,
+        threshold: float = 0.7
+    ) -> List[MemorySearchResult]:
+        """Search memories using semantic similarity"""
+        params = {
+            "query": query,
+            "limit": limit,
+            "threshold": threshold
+        }
         if session_id:
             params["session_id"] = session_id
-        if memory_type:
-            params["type"] = memory_type
+        if types:
+            params["types"] = types
+        if tags:
+            params["tags"] = tags
         
-        response = await self.client.get(f"{self.base_url}/v1/memories/search", params=params)
+        response = await self.client.get(f"{self.base_url}/v1/memories", params=params)
         response.raise_for_status()
-        return [MemoryResponse(**m) for m in response.json().get("data", [])]
+        return [MemorySearchResult(**m) for m in response.json().get("data", [])]
+
+    async def list_turns(self, session_id: str, limit: int = 20, starting_after: Optional[str] = None) -> List[TurnResponse]:
+        """List turns in a session"""
+        params = {"limit": limit}
+        if starting_after:
+            params["starting_after"] = starting_after
+        response = await self.client.get(f"{self.base_url}/v1/sessions/{session_id}/turns", params=params)
+        response.raise_for_status()
+        return [TurnResponse(**t) for t in response.json().get("data", [])]
     
     # Health
     async def health(self) -> Dict[str, Any]:

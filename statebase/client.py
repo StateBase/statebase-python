@@ -10,7 +10,9 @@ from .models import (
     TurnResponse,
     MemoryCreateRequest,
     MemoryResponse,
+    MemorySearchResult,
     StateUpdateRequest,
+    StateGetResponse,
 )
 
 class SessionsClient:
@@ -67,11 +69,22 @@ class SessionsClient:
         return response.json()
     
     
-    def get_context(self, session_id: str, query: str) -> Dict[str, Any]:
-        """Get processed context for LLM generation"""
+    def get_context(
+        self,
+        session_id: str,
+        query: Optional[str] = None,
+        memory_limit: int = 5,
+        turn_limit: int = 5
+    ) -> Dict[str, Any]:
+        """Get consolidated context (state, relevant memories, recent turns)"""
+        payload = {
+            "query": query,
+            "memory_limit": memory_limit,
+            "turn_limit": turn_limit
+        }
         response = self.client.post(
             f"{self.base_url}/v1/sessions/{session_id}/context",
-            json={"query": query}
+            json=payload
         )
         response.raise_for_status()
         return response.json()
@@ -148,23 +161,28 @@ class MemoryClient:
     def search(
         self,
         query: str,
-        user_id: Optional[str] = None,
         session_id: Optional[str] = None,
-        types: Optional[List[str]] = None,
+        types: Optional[str] = None,
+        tags: Optional[str] = None,
         limit: int = 10,
-        threshold: float = 0.75
-    ) -> List[MemoryResponse]:
-        """Search memories"""
-        params = {"query": query, "limit": limit, "threshold": threshold}
+        threshold: float = 0.7
+    ) -> List[MemorySearchResult]:
+        """Search memories using semantic similarity"""
+        params = {
+            "query": query,
+            "limit": limit,
+            "threshold": threshold
+        }
         if session_id:
             params["session_id"] = session_id
-        if user_id:
-            params["user_id"] = user_id
-        # Handle list in query params if needed, simplified here
-        
-        response = self.client.get(f"{self.base_url}/v1/memories/search", params=params)
+        if types:
+            params["types"] = types
+        if tags:
+            params["tags"] = tags
+            
+        response = self.client.get(f"{self.base_url}/v1/memories", params=params)
         response.raise_for_status()
-        return [MemoryResponse(**m) for m in response.json().get("data", [])]
+        return [MemorySearchResult(**m) for m in response.json().get("data", [])]
 
 
 class StateBase:
