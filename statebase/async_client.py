@@ -146,6 +146,15 @@ class AsyncSessionsClient:
         response.raise_for_status()
         return StateGetResponse(**response.json())
 
+    async def fork(self, session_id: str, version: Optional[int] = None) -> SessionResponse:
+        """Fork an existing session from a specific version"""
+        response = await self.client.post(
+            f"{self.base_url}/v1/sessions/{session_id}/fork",
+            json={"version": version}
+        )
+        response.raise_for_status()
+        return SessionResponse(**response.json())
+
 
 class AsyncMemoryClient:
     def __init__(self, client: httpx.AsyncClient, base_url: str):

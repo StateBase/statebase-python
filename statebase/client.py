@@ -127,8 +127,20 @@ class SessionsClient:
             f"{self.base_url}/v1/sessions/{session_id}/state",
             json={"state": state, "reasoning": reasoning}
         )
+        # Fix missing response handling in previous view? 
+        # Actually in sync client it returned response.json(). 
+        # Let's keep it consistent.
         response.raise_for_status()
         return response.json()
+
+    def fork(self, session_id: str, version: Optional[int] = None) -> SessionResponse:
+        """Fork an existing session from a specific version"""
+        response = self.client.post(
+            f"{self.base_url}/v1/sessions/{session_id}/fork",
+            json={"version": version}
+        )
+        response.raise_for_status()
+        return SessionResponse(**response.json())
 
 
 class MemoryClient:
