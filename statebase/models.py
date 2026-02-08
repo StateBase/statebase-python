@@ -16,6 +16,7 @@ class SessionResponse(BaseModel):
     object: str = "session"
     id: str
     agent_id: str
+    user_id: Optional[str] = None
     created_at: str
     updated_at: str
     metadata: Optional[Dict[str, Any]] = None
@@ -98,7 +99,6 @@ class ContextResponse(BaseModel):
 
 
 class StateGetResponse(BaseModel):
-    data: Dict[str, Any]
     session_id: str
     version: int
     state: Dict[str, Any]
@@ -108,6 +108,7 @@ class StateGetResponse(BaseModel):
 
 class StateUpdateRequest(BaseModel):
     state: Dict[str, Any]
+    reasoning: Optional[str] = None
 
 
 class StatePartialUpdateRequest(BaseModel):

@@ -68,7 +68,11 @@ class SessionsClient:
         response.raise_for_status()
         return response.json()
     
-    
+    def delete(self, session_id: str) -> None:
+        """Delete a session"""
+        response = self.client.delete(f"{self.base_url}/v1/sessions/{session_id}")
+        response.raise_for_status()
+
     def get_context(
         self,
         session_id: str,
@@ -116,22 +120,43 @@ class SessionsClient:
         response.raise_for_status()
         return TurnResponse(**response.json())
 
+    def list_turns(self, session_id: str, limit: int = 20, starting_after: Optional[str] = None) -> List[TurnResponse]:
+        """List turns in a session"""
+        params = {"limit": limit}
+        if starting_after:
+            params["starting_after"] = starting_after
+        response = self.client.get(f"{self.base_url}/v1/sessions/{session_id}/turns", params=params)
+        response.raise_for_status()
+        return [TurnResponse(**t) for t in response.json().get("data", [])]
+
+    def get_state(self, session_id: str) -> StateGetResponse:
+        """Get current state of a session"""
+        response = self.client.get(f"{self.base_url}/v1/sessions/{session_id}/state")
+        response.raise_for_status()
+        return StateGetResponse(**response.json())
+
     def update_state(
         self,
         session_id: str,
         state: Dict[str, Any],
         reasoning: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> StateGetResponse:
         """Partially update session state"""
         response = self.client.patch(
             f"{self.base_url}/v1/sessions/{session_id}/state",
             json={"state": state, "reasoning": reasoning}
         )
-        # Fix missing response handling in previous view? 
-        # Actually in sync client it returned response.json(). 
-        # Let's keep it consistent.
         response.raise_for_status()
-        return response.json()
+        return StateGetResponse(**response.json())
+
+    def rollback(self, session_id: str, version: int) -> StateGetResponse:
+        """Revert session to a previous state version"""
+        response = self.client.post(
+            f"{self.base_url}/v1/sessions/{session_id}/state/rollback",
+            json={"version": version}
+        )
+        response.raise_for_status()
+        return StateGetResponse(**response.json())
 
     def fork(self, session_id: str, version: Optional[int] = None) -> SessionResponse:
         """Fork an existing session from a specific version"""
@@ -210,8 +235,7 @@ class StateBase:
         self.timeout = timeout
         self.client = httpx.Client(
             headers={
-                "Authorization": f"Bearer {api_key}",
-                "X-API-Key": api_key, # Support both styles for now
+                "X-API-Key": api_key,
                 "Content-Type": "application/json"
             },
             timeout=timeout
@@ -221,6 +245,12 @@ class StateBase:
         self.sessions = SessionsClient(self.client, self.base_url)
         self.memory = MemoryClient(self.client, self.base_url)
     
+    def health(self) -> Dict[str, Any]:
+        """Check API health"""
+        response = self.client.get(f"{self.base_url}/health")
+        response.raise_for_status()
+        return response.json()
+
     def __enter__(self):
         return self
     
