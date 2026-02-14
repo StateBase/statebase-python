@@ -13,3 +13,6 @@ dist/
 # Internal Planning Docs
 PYTHON_SDK_ANALYSIS.md
 
+
+# Internal Documentation
+.internal/
