@@ -43,6 +43,18 @@ class TurnCreateRequest(BaseModel):
     reasoning: Optional[str] = None
 
 
+class ToolCall(BaseModel):
+    name: str
+    arguments: Dict[str, Any]
+    id: Optional[str] = None
+
+
+class ToolResponse(BaseModel):
+    tool_call_id: Optional[str] = None
+    output: Any
+    is_error: bool = False
+
+
 class TurnResponse(BaseModel):
     object: str = "turn"
     id: str

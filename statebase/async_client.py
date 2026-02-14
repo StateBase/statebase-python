@@ -117,6 +117,39 @@ class AsyncSessionsClient:
         response.raise_for_status()
         return TurnResponse(**response.json())
 
+    async def add_tool_call(
+        self,
+        session_id: str,
+        tool_name: str,
+        arguments: Dict[str, Any],
+        output: Any,
+        tool_call_id: Optional[str] = None,
+        reasoning: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> TurnResponse:
+        """Convenience method to log a tool call turn"""
+        input_data = {
+            "type": "tool_call",
+            "content": f"Call tool {tool_name} with {arguments}",
+            "tool_metadata": {
+                "name": tool_name,
+                "arguments": arguments,
+                "id": tool_call_id
+            }
+        }
+        output_data = {
+            "type": "tool_response",
+            "content": str(output),
+            "output": output
+        }
+        return await self.add_turn(
+            session_id=session_id,
+            input=input_data,
+            output=output_data,
+            reasoning=reasoning,
+            metadata=metadata
+        )
+
     async def list_turns(self, session_id: str, limit: int = 20, starting_after: Optional[str] = None) -> List[TurnResponse]:
         """List turns in a session"""
         params = {"limit": limit}
@@ -154,6 +187,15 @@ class AsyncSessionsClient:
         )
         response.raise_for_status()
         return SessionResponse(**response.json())
+
+    async def rollback(self, session_id: str, version: int) -> StateGetResponse:
+        """Revert session to a previous state version"""
+        response = await self.client.post(
+            f"{self.base_url}/v1/sessions/{session_id}/state/rollback",
+            json={"version": version}
+        )
+        response.raise_for_status()
+        return StateGetResponse(**response.json())
 
 
 class AsyncMemoryClient:

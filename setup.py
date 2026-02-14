@@ -7,7 +7,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="statebase",
-    version="0.3.0",
+    version="0.4.0",
     description="The Reliability Layer for Production AI Agents",
     long_description=long_description,
     long_description_content_type="text/markdown",
