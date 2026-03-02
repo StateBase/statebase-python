@@ -13,6 +13,7 @@ from .models import (
     MemorySearchResult,
     StateUpdateRequest,
     StateGetResponse,
+    ContextResponse,
 )
 
 class SessionsClient:
@@ -79,7 +80,7 @@ class SessionsClient:
         query: Optional[str] = None,
         memory_limit: int = 5,
         turn_limit: int = 5
-    ) -> Dict[str, Any]:
+    ) -> ContextResponse:
         """Get consolidated context (state, relevant memories, recent turns)"""
         payload = {
             "query": query,
@@ -91,7 +92,30 @@ class SessionsClient:
             json=payload
         )
         response.raise_for_status()
-        return response.json()
+        
+        data = response.json()
+        context = ContextResponse(**data)
+        # Capture latency from header
+        context.latency_ms = response.headers.get("X-StateBase-Latency")
+        return context
+
+    def ingest(
+        self,
+        session_id: str,
+        user_input: str,
+        agent_output: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> TurnResponse:
+        """
+        High-level wrapper to log a conversation turn.
+        Automatically handles string-to-object conversion.
+        """
+        return self.add_turn(
+            session_id=session_id,
+            input=user_input,
+            output=agent_output,
+            metadata=metadata
+        )
 
     def add_turn(
         self,

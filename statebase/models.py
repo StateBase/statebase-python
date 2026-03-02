@@ -108,6 +108,9 @@ class ContextResponse(BaseModel):
     state: Dict[str, Any]
     memories: List[Dict[str, Any]]
     recent_turns: List[Dict[str, Any]]
+    drift_warning: bool = False
+    average_relevance: float = 0.0
+    latency_ms: Optional[str] = None
 
 
 class StateGetResponse(BaseModel):
